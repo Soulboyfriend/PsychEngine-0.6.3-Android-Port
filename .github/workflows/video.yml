@@ -1,4 +1,4 @@
-name: Build Psych Engine (fixed Lime Android path)
+name: Build Psych Engine (Android Fixed)
 
 on: workflow_dispatch
 
@@ -58,7 +58,7 @@ jobs:
           haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
           haxelib list
 
-      # 🧩 Fix Lime SDK/NDK path manually
+      # 🧩 Fix Lime SDK paths
       - name: Patch Lime SDK paths
         run: |
           echo "🔧 Setting Android SDK and NDK paths manually"
@@ -77,10 +77,16 @@ jobs:
           cat ~/.lime/config.xml
           echo "✅ SDK and NDK configured for Lime"
 
-      # 🧩 Setup Lime Android target
-      - name: Setup Lime Android
+      # 🧩 Force run Lime setup Android before build
+      - name: Run Lime Setup Android
         run: |
+          echo "🧱 Running Lime setup for Android (forced)"
+          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+          export ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/25.2.9519653
           yes | haxelib run lime setup android --quiet || true
+          haxelib run lime config ANDROID_SDK $ANDROID_SDK_ROOT
+          haxelib run lime config ANDROID_NDK $ANDROID_NDK_ROOT
+          echo "✅ Lime Android setup complete"
 
       # 🏗️ Build Psych Engine
       - name: Build Psych Engine for ${{ matrix.system }}
