@@ -15,6 +15,7 @@ jobs:
             artifactName: androidBuild-Arm64
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
             system: Android
+
           - name: Android-Armv7
             os: ubuntu-24.04
             buildArgs: "android -D officialBuild -ONLY_ARMV7 -final"
@@ -22,6 +23,7 @@ jobs:
             artifactName: androidBuild-Armv7
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
             system: Android
+
           - name: Android-Both
             os: ubuntu-24.04
             buildArgs: "android -D officialBuild -final"
@@ -36,6 +38,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ⚡ Cache haxelib folder to speed up future builds
+      - name: Cache Haxe libraries
+        uses: actions/cache@v4
+        with:
+          path: ~/.haxelib
+          key: ${{ runner.os }}-haxelib-cache-${{ hashFiles('Project.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-haxelib-cache-
+
       # 🧰 Install system dependencies
       - name: Install system dependencies
         run: |
@@ -48,15 +59,12 @@ jobs:
         with:
           haxe-version: 4.3.3
 
-      # 🧱 Setup and install libraries
+      # 🧱 Setup and install libraries (includes polybiusproxy/hxCodec)
       - name: Setup dependencies
         run: |
           ${{ matrix.setupCommand }}
-
-          echo "🔹 Installing latest hxCodec from polybiusproxy"
-          haxelib remove hxCodec --always || true
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
           haxelib list
+          echo "✅ Dependencies installed successfully."
 
       # 🏗️ Build Psych Engine (Mobile)
       - name: Build Psych Engine for ${{ matrix.system }}
