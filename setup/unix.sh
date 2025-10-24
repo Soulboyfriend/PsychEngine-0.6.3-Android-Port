@@ -1,42 +1,33 @@
 #!/bin/sh
-# SETUP FOR MAC, LINUX, AND GITHUB WORKFLOWS
-# Make sure Haxe is installed before running this script.
+# SETUP FOR MAC AND LINUX SYSTEMS!!!
+# Used by GitHub Actions & local setup
+# Psych Engine 0.6.3 Mobile Port + hxCodec Overlay Support
 
-cd ..
-echo "🔧 Setting up haxelib repository..."
+echo "🔧 Setting up Haxe libraries..."
 haxelib setup ~/haxelib
 
-echo "📦 Installing dependencies..."
-echo "This might take a few moments depending on your internet speed."
-
-# Core dependencies
-haxelib git linc_luajit https://github.com/PsychExtendedThings/linc_luajit --quiet
-haxelib install tjson --quiet
+echo "📦 Installing core dependencies..."
+haxelib install tjson 1.4.0 --quiet
 haxelib install flixel 5.2.2 --quiet
 haxelib install flixel-addons 2.11.0 --quiet
 haxelib install flixel-ui 2.4.0 --quiet
 haxelib install hscript 2.4.0 --quiet
 
-# =============================================
-# 🚀 FIXED: Safe hxCodec install (polybiusproxy version)
-# =============================================
+echo "📜 Installing Lua and utility libs..."
+haxelib git linc_luajit https://github.com/PsychExtendedThings/linc_luajit --quiet
 
-echo "🔹 Installing latest hxCodec (fast shallow clone)..."
-
-# Remove old version safely
-haxelib remove hxCodec || true
-
-# Shallow clone to avoid timeouts in GitHub Actions
-git clone --depth=1 https://github.com/polybiusproxy/hxCodec hxCodec-lib
-
-# Link hxCodec locally (faster and CI-safe)
-haxelib dev hxCodec hxCodec-lib
-
-# =============================================
-
-# Remaining libraries
+echo "🎬 Installing hxcpp + lime..."
 haxelib git hxcpp https://github.com/PsychExtendedThings/hxcpp --quiet
 haxelib git lime https://github.com/PsychExtendedThings/lime-new --quiet
 haxelib install openfl 9.2.2 --quiet
 
-echo "✅ Setup complete! All dependencies installed."
+# ✅ Optimized hxCodec installation (polybiusproxy version)
+# Only installs if missing, skips re-downloading in cached builds
+if haxelib list | grep -q "hxCodec:"; then
+    echo "✅ hxCodec already installed — skipping reinstallation."
+else
+    echo "🎞️ Installing hxCodec from polybiusproxy..."
+    haxelib git hxCodec https://github.com/polybiusproxy/hxCodec --quiet
+fi
+
+echo "🎉 Finished! All dependencies ready for Psych Engine Mobile."
