@@ -35,28 +35,23 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      # 🧱 Checkout source
+      # 🧱 Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🧰 System dependencies
+      # 🧰 Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git python3 openjdk-17-jdk wget unzip
 
-      # 🧩 Setup Haxe 4.3.3
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: 4.3.3
-
-      # 🧩 Install Android SDK and NDK
+      # 🧩 Setup Android SDK and NDK
       - name: Setup Android SDK
         run: |
           echo "🔹 Installing Android SDK + NDK"
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip -q commandlinetools-linux-9477386_latest.zip -d $HOME/android-sdk/cmdline-tools
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O sdk-tools.zip
+          unzip -q sdk-tools.zip -d $HOME/android-sdk/cmdline-tools
           mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
 
           export ANDROID_SDK_ROOT=$HOME/android-sdk
@@ -69,30 +64,33 @@ jobs:
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
 
-      # ⚙️ Setup Haxelib dependencies
+      # 🧩 Setup Haxe 4.3.3
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.3
+
+      # 🧱 Setup and install Haxe dependencies
       - name: Setup dependencies
         run: |
+          echo "🔹 Running setup command..."
           ${{ matrix.setupCommand }}
-          echo "🔹 Installing updated hxCodec (polybiusproxy)"
+
+          echo "🔹 Reinstalling latest hxCodec (polybiusproxy)"
           haxelib remove hxCodec --always || true
           haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
-          haxelib list
 
-      # 🏗️ Configure Lime for Android
-      - name: Configure Lime Android
-        run: |
-          echo "🔹 Configuring Lime for Android"
-          export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
-          yes | haxelib run lime setup android --quiet
+          echo "🔹 Verifying installed libraries..."
+          haxelib list
 
       # 🏗️ Build Psych Engine
       - name: Build Psych Engine for ${{ matrix.system }}
         run: |
           echo "🔹 Building for: ${{ matrix.name }}"
-          export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
+          haxelib run lime setup android --yes
           haxelib run lime build ${{ matrix.buildArgs }}
 
-      # 📦 Upload build artifact
+      # 📦 Upload compiled APK
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
