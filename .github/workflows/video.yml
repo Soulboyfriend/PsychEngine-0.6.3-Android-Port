@@ -1,0 +1,72 @@
+name: Build Psych Engine (with hxCodec overlay support)
+
+on: workflow_dispatch
+
+jobs:
+  Build:
+    name: ${{ matrix.name }}
+    strategy:
+      matrix:
+        include:
+          - name: Android-Arm64
+            os: ubuntu-24.04
+            buildArgs: "android -D officialBuild -ONLY_ARM64 -final"
+            setupCommand: sh ./setup/unix.sh
+            artifactName: androidBuild-Arm64
+            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+            system: Android
+          - name: Android-Armv7
+            os: ubuntu-24.04
+            buildArgs: "android -D officialBuild -ONLY_ARMV7 -final"
+            setupCommand: sh ./setup/unix.sh
+            artifactName: androidBuild-Armv7
+            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+            system: Android
+          - name: Android-Both
+            os: ubuntu-24.04
+            buildArgs: "android -D officialBuild -final"
+            setupCommand: sh ./setup/unix.sh
+            artifactName: androidBuild-Both
+            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+            system: Android
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      # 🧱 Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 🧰 Install system dependencies
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git python3 openjdk-17-jdk wget unzip
+
+      # 🧩 Setup Haxe 4.3.3 or later
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: 4.3.3
+
+      # 🧱 Setup and install libraries
+      - name: Setup dependencies
+        run: |
+          ${{ matrix.setupCommand }}
+
+          echo "🔹 Installing latest hxCodec from polybiusproxy"
+          haxelib remove hxCodec --always || true
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
+          haxelib list
+
+      # 🏗️ Build Psych Engine (Mobile)
+      - name: Build Psych Engine for ${{ matrix.system }}
+        run: |
+          echo "🔹 Building for: ${{ matrix.name }}"
+          haxelib run lime build ${{ matrix.buildArgs }}
+
+      # 📦 Upload build artifact
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifactName }}
+          path: ${{ matrix.artifactPath }}
