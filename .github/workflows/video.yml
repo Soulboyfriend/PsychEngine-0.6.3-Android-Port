@@ -1,4 +1,4 @@
-name: Build Psych Engine (Android Fixed)
+name: Build Psych Engine (with hxCodec overlay support)
 
 on: workflow_dispatch
 
@@ -15,6 +15,7 @@ jobs:
             artifactName: androidBuild-Arm64
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
             system: Android
+
           - name: Android-Armv7
             os: ubuntu-24.04
             buildArgs: "android -D officialBuild -ONLY_ARMV7 -final"
@@ -22,6 +23,7 @@ jobs:
             artifactName: androidBuild-Armv7
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
             system: Android
+
           - name: Android-Both
             os: ubuntu-24.04
             buildArgs: "android -D officialBuild -final"
@@ -31,72 +33,47 @@ jobs:
             system: Android
 
     runs-on: ${{ matrix.os }}
+
     steps:
-      # 🧱 Checkout repository
+      # 🧱 Checkout source
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🧰 Install system dependencies
+      # 🧰 System dependencies
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git python3 openjdk-17-jdk wget unzip
 
-      # 🧩 Setup Haxe
+      # 🧩 Setup Haxe 4.3.3
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
         with:
           haxe-version: 4.3.3
 
-      # 🧱 Setup Haxelib dependencies
+      # ⚙️ Setup Haxelib dependencies (including hxCodec)
       - name: Setup dependencies
         run: |
           ${{ matrix.setupCommand }}
 
-          echo "🔹 Installing latest hxCodec from polybiusproxy"
+          echo "🔹 Installing updated hxCodec (polybiusproxy)"
           haxelib remove hxCodec --always || true
           haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
           haxelib list
 
-      # 🧩 Fix Lime SDK paths
-      - name: Patch Lime SDK paths
+      # 🏗️ Setup Android SDK & NDK
+      - name: Setup Android SDK
         run: |
-          echo "🔧 Setting Android SDK and NDK paths manually"
-          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-          export ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/25.2.9519653
-          mkdir -p ~/.lime/config
-          echo "<config>
-            <android>
-              <sdk>$ANDROID_SDK_ROOT</sdk>
-              <ndk>$ANDROID_NDK_ROOT</ndk>
-              <toolsVersion>34.0.0</toolsVersion>
-              <targetSDK>34</targetSDK>
-              <buildToolsVersion>34.0.0</buildToolsVersion>
-            </android>
-          </config>" > ~/.lime/config.xml
-          cat ~/.lime/config.xml
-          echo "✅ SDK and NDK configured for Lime"
-
-      # 🧩 Force run Lime setup Android before build
-      - name: Run Lime Setup Android
-        run: |
-          echo "🧱 Running Lime setup for Android (forced)"
-          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-          export ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/25.2.9519653
-          yes | haxelib run lime setup android --quiet || true
-          haxelib run lime config ANDROID_SDK $ANDROID_SDK_ROOT
-          haxelib run lime config ANDROID_NDK $ANDROID_NDK_ROOT
-          echo "✅ Lime Android setup complete"
+          echo "🔹 Running lime setup android"
+          yes | haxelib run lime setup android
 
       # 🏗️ Build Psych Engine
       - name: Build Psych Engine for ${{ matrix.system }}
         run: |
           echo "🔹 Building for: ${{ matrix.name }}"
-          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-          export ANDROID_NDK_ROOT=/usr/local/lib/android/sdk/ndk/25.2.9519653
           haxelib run lime build ${{ matrix.buildArgs }}
 
-      # 📦 Upload artifact
+      # 📦 Upload build artifact
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
