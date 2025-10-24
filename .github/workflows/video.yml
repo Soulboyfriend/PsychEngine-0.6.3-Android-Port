@@ -35,7 +35,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      # 🧱 Checkout repository
+      # 🧱 Checkout source
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -45,7 +45,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git python3 openjdk-17-jdk wget unzip
 
-      # 🧩 Setup Android SDK and NDK
+      # 🧩 Setup Android SDK + NDK
       - name: Setup Android SDK
         run: |
           echo "🔹 Installing Android SDK + NDK"
@@ -62,35 +62,43 @@ jobs:
           sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-34" "build-tools;34.0.0" "ndk;26.1.10909125"
 
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
+          echo "ANDROID_SDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH" >> $GITHUB_ENV
 
-      # 🧩 Setup Haxe 4.3.3
+      # 🧩 Setup Haxe
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
         with:
           haxe-version: 4.3.3
 
-      # 🧱 Setup and install Haxe dependencies
+      # 🧱 Install all haxelibs
       - name: Setup dependencies
         run: |
           echo "🔹 Running setup command..."
           ${{ matrix.setupCommand }}
 
-          echo "🔹 Reinstalling latest hxCodec (polybiusproxy)"
+          echo "🔹 Installing latest hxCodec (polybiusproxy)"
           haxelib remove hxCodec --always || true
           haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
-
-          echo "🔹 Verifying installed libraries..."
           haxelib list
 
       # 🏗️ Build Psych Engine
       - name: Build Psych Engine for ${{ matrix.system }}
+        env:
+          ANDROID_SDK: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_NDK_ROOT }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          PATH: ${{ env.PATH }}
         run: |
           echo "🔹 Building for: ${{ matrix.name }}"
           haxelib run lime setup android --yes
           haxelib run lime build ${{ matrix.buildArgs }}
 
-      # 📦 Upload compiled APK
+      # 📦 Upload build
       - name: Upload Build
         uses: actions/upload-artifact@v4
         with:
