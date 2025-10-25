@@ -23,11 +23,7 @@ haxelib install openfl 9.2.2 --quiet
 
 # ✅ Optimized hxCodec installation (polybiusproxy version)
 # Only installs if missing, skips re-downloading in cached builds
-if haxelib list | grep -q "hxCodec:"; then
-    echo "✅ hxCodec already installed — skipping reinstallation."
-else
-    echo "🎞️ Installing hxCodec from polybiusproxy..."
-    haxelib git hxCodec https://github.com/polybiusproxy/hxCodec --quiet
-fi
-
-echo "🎉 Finished! All dependencies ready for Psych Engine Mobile."
+haxelib remove hxCodec --quiet || true
+rm -rf ~/haxelib/hxCodec || true
+echo "🔹 Installing hxCodec (polybiusproxy)"
+haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
