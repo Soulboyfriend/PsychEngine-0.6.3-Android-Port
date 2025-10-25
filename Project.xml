@@ -155,6 +155,8 @@
 	<haxelib name="tjson"/>
 	<haxelib name="hxCodec" if="VIDEOS_ALLOWED"/>
 	<haxelib name="faxe" if='switch'/>
+	<haxelib name="lime" version="8.0.0" />
+    <haxelib name="openfl" version="9.2.2" />
 	<!--<haxelib name="polymod"/> -->
 	<haxelib name="discord_rpc" if="desktop"/>
 
