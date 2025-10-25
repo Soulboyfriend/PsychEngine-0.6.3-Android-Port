@@ -53,11 +53,11 @@ jobs:
       - name: Install Libraries
         run: ${{ inputs.setupCommand }}
 
-      # ✅ Install the improved hxCodec from PolybiusProxy
+      # ✅ Install improved hxCodec from PolybiusProxy
       - name: Install improved hxCodec
         run: |
-          git clone https://github.com/polybiusproxy/hxCodec.git
-          haxelib dev hxCodec ./hxCodec
+          haxelib remove hxCodec || true
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
           echo "✅ Improved hxCodec installed successfully"
 
       - name: Configure Android
