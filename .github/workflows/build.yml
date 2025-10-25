@@ -53,14 +53,25 @@ jobs:
       - name: Install Libraries
         run: ${{ inputs.setupCommand }}
 
-      # ✅ Install improved hxCodec from PolybiusProxy
+      # ✅ Install the improved hxCodec manually and verify structure
       - name: Install improved hxCodec
         run: |
+          echo "🧹 Removing old hxCodec (if any)..."
           haxelib remove hxCodec || true
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
-          echo "✅ Improved hxCodec installed successfully"
-          haxelib list
+          
+          echo "⬇️ Cloning improved hxCodec from PolybiusProxy..."
+          rm -rf hxCodec
+          git clone https://github.com/polybiusproxy/hxCodec.git
+          
+          echo "📦 Registering hxCodec as a dev library..."
+          haxelib dev hxCodec $(pwd)/hxCodec
+          
+          echo "✅ hxCodec installed successfully!"
+          echo "🔍 Library path info:"
           haxelib path hxCodec
+          
+          echo "🔎 Checking for MP4Handler.hx..."
+          find hxCodec -type f | grep MP4Handler.hx || echo "❌ MP4Handler.hx not found!"
 
       - name: Configure Android
         if: inputs.system == 'Android'
