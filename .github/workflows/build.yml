@@ -53,6 +53,13 @@ jobs:
       - name: Install Libraries
         run: ${{ inputs.setupCommand }}
 
+      # ✅ Install the improved hxCodec from PolybiusProxy
+      - name: Install improved hxCodec
+        run: |
+          git clone https://github.com/polybiusproxy/hxCodec.git
+          haxelib dev hxCodec ./hxCodec
+          echo "✅ Improved hxCodec installed successfully"
+
       - name: Configure Android
         if: inputs.system == 'Android'
         run: |
@@ -61,8 +68,9 @@ jobs:
           haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
           haxelib run lime config ANDROID_SETUP true
 
+      # ✅ Add -DVIDEOS_ALLOWED to make video playback work
       - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }}
+        run: haxelib run lime build ${{ inputs.buildArgs }} -DVIDEOS_ALLOWED
 
       - name: Make IPA For iOS Simulator
         if: inputs.system == 'iOS-Sim'
