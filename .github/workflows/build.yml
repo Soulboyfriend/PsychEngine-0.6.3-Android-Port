@@ -57,8 +57,10 @@ jobs:
       - name: Install improved hxCodec
         run: |
           haxelib remove hxCodec || true
-          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec
           echo "✅ Improved hxCodec installed successfully"
+          haxelib list
+          haxelib path hxCodec
 
       - name: Configure Android
         if: inputs.system == 'Android'
