@@ -45,6 +45,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git python3 openjdk-17-jdk wget unzip
 
+      - name: Run Lime Android Setup
+        run: |
+         echo "🔹 Running lime setup android (auto accept)"
+         yes "" | haxelib run lime setup android
+
       # 🧩 Setup Android SDK + NDK
       - name: Setup Android SDK
         run: |
