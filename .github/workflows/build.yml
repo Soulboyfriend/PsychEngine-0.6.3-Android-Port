@@ -1,109 +1,109 @@
-name: Build
-
-on:
-  workflow_call:
-    inputs:
-      name:
-        required: true
-        type: string
-      os:
-        required: true
-        type: string
-      setupCommand:
-        required: true
-        type: string
-      buildArgs:
-        required: true
-        type: string
-      artifactName:
-        required: true
-        type: string
-      artifactPath:
-        required: true
-        type: string
-      system:
-        required: true
-        type: string
-
-env:
-  HAXE_VERSION: 4.2.5
-  PROJECT_NAME: PsychEngine
-
-jobs:
-  build:
-    name: Build
-    runs-on: ${{ inputs.os }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
-
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1.2.0
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
-
-      - name: Setup Android NDK
-        if: inputs.system == 'Android'
-        id: setup-ndk
-        uses: nttld/setup-ndk@main
-        with:
-          ndk-version: r27c
-          add-to-path: false
-
-      - name: Install Libraries
-        run: ${{ inputs.setupCommand }}
-
-      # ✅ Install the improved hxCodec manually and verify structure
-      - name: Install improved hxCodec
-        run: |
-          echo "🧹 Removing old hxCodec (if any)..."
-          haxelib remove hxCodec || true
-          
-          echo "⬇️ Cloning improved hxCodec from PolybiusProxy..."
-          rm -rf hxCodec
-          git clone https://github.com/polybiusproxy/hxCodec.git
-          
-          echo "📦 Registering hxCodec as a dev library..."
-          haxelib dev hxCodec $(pwd)/hxCodec
-          
-          echo "✅ hxCodec installed successfully!"
-          echo "🔍 Library path info:"
-          haxelib path hxCodec
-          
-          echo "🔎 Checking for MP4Handler.hx..."
-          find hxCodec -type f | grep MP4Handler.hx || echo "❌ MP4Handler.hx not found!"
-
-      - name: Configure Android
-        if: inputs.system == 'Android'
-        run: |
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME
-          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64
-          haxelib run lime config ANDROID_SETUP true
-
-      # ✅ Add -DVIDEOS_ALLOWED to make video playback work
-      - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }} -DVIDEOS_ALLOWED
-
-      - name: Make IPA For iOS Simulator
-        if: inputs.system == 'iOS-Sim'
-        run: |
-          cd export/release/ios/build/Release-iphonesimulator
-          mkdir Payload
-          mv *.app Payload
-          zip -r ${{ env.PROJECT_NAME }}.ipa Payload
-
-      - name: Make IPA For iOS
-        if: inputs.system == 'iOS'
-        run: |
-          cd export/release/ios/build/Release-iphoneos
-          mkdir Payload
-          mv *.app Payload
-          zip -r ${{ env.PROJECT_NAME }}.ipa Payload
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: ${{ inputs.artifactName }}
-          path: ${{ inputs.artifactPath }}
+name: Build  
+  
+on:  
+  workflow_call:  
+    inputs:  
+      name:  
+        required: true  
+        type: string  
+      os:  
+        required: true  
+        type: string  
+      setupCommand:  
+        required: true  
+        type: string  
+      buildArgs:  
+        required: true  
+        type: string  
+      artifactName:  
+        required: true  
+        type: string  
+      artifactPath:  
+        required: true  
+        type: string  
+      system:  
+        required: true  
+        type: string  
+  
+env:  
+  HAXE_VERSION: 4.2.5  
+  PROJECT_NAME: PsychEngine  
+  
+jobs:  
+  build:  
+    name: Build  
+    runs-on: ${{ inputs.os }}  
+  
+    steps:  
+      - name: Checkout  
+        uses: actions/checkout@main  
+  
+      - name: Setup Haxe  
+        uses: krdlab/setup-haxe@v1.2.0  
+        with:  
+          haxe-version: ${{ env.HAXE_VERSION }}  
+  
+      - name: Setup Android NDK  
+        if: inputs.system == 'Android'  
+        id: setup-ndk  
+        uses: nttld/setup-ndk@main  
+        with:  
+          ndk-version: r27c  
+          add-to-path: false  
+  
+      - name: Install Libraries  
+        run: ${{ inputs.setupCommand }}  
+  
+      # ✅ Install improved hxCodec from PolybiusProxy  
+      - name: Install improved hxCodec  
+        run: |  
+          echo "🧹 Removing old hxCodec (if any)..."  
+          haxelib remove hxCodec || true  
+          echo "⬇️ Cloning improved hxCodec from PolybiusProxy..."  
+          haxelib git hxCodec https://github.com/polybiusproxy/hxCodec.git  
+          echo "📦 Registering hxCodec as a dev library..."  
+          haxelib dev hxCodec hxCodec  
+          echo "✅ hxCodec installed successfully!"  
+          echo "🔍 Library path info:"  
+          haxelib path hxCodec  
+  
+      # 🧠 Debug: find what replaced MP4Handler.hx  
+      - name: Debug hxCodec video handler files  
+        run: |  
+          echo "🔎 Checking for any video-related Haxe files..."  
+          find hxCodec -type f -name "*Video*.hx" -print -exec head -n 5 {} \; || echo "⚠️ No video-related files found!"  
+  
+      - name: Configure Android  
+        if: inputs.system == 'Android'  
+        run: |  
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME  
+          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}  
+          haxelib run lime config JAVA_HOME $JAVA_HOME_17_X64  
+          haxelib run lime config ANDROID_SETUP true  
+  
+      # ✅ Add -DVIDEOS_ALLOWED to make video playback work  
+      - name: Compile  
+        run: haxelib run lime build ${{ inputs.buildArgs }} -DVIDEOS_ALLOWED  
+  
+      - name: Make IPA For iOS Simulator  
+        if: inputs.system == 'iOS-Sim'  
+        run: |  
+          cd export/release/ios/build/Release-iphonesimulator  
+          mkdir Payload  
+          mv *.app Payload  
+          zip -r ${{ env.PROJECT_NAME }}.ipa Payload  
+  
+      - name: Make IPA For iOS  
+        if: inputs.system == 'iOS'  
+        run: |  
+          cd export/release/ios/build/Release-iphoneos  
+          mkdir Payload  
+          mv *.app Payload  
+          zip -r ${{ env.PROJECT_NAME }}.ipa Payload  
+  
+      - name: Upload Artifact  
+        uses: actions/upload-artifact@main  
+        with:  
+          name: ${{ inputs.artifactName }}  
+          path: ${{ inputs.artifactPath }}  
           if-no-files-found: error
