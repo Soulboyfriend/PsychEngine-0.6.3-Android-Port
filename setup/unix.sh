@@ -17,4 +17,8 @@ haxelib git hxCodec https://github.com/PsychExtendedThings/hxCodec-0.6.3 --quiet
 haxelib git hxcpp https://github.com/PsychExtendedThings/hxcpp --quiet
 haxelib git lime https://github.com/PsychExtendedThings/lime --quiet
 haxelib install openfl 9.2.2 --quiet
+OPENFL_STAGE="$HOME/haxelib/openfl/9,2,2/src/openfl/display/Stage.hx"
+
+sed -i 's/__onLimeUpdate(deltaTime:Int)/__onLimeUpdate(deltaTime:Float)/' "$OPENFL_STAGE"
+sed -i 's/__deltaTime = deltaTime;/__deltaTime = Std.int(deltaTime);/' "$OPENFL_STAGE"
 echo Finished!
